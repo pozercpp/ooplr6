@@ -1,95 +1,78 @@
-#include <iostream>
-#include <vector>
-#include <memory>
+#include <cstring>
+#include <ctime>
 #include <fstream>
-#include <random>
-#include <chrono>
-#include <thread>
+#include <set>
 
-#include <npc.hpp>
-#include <squirrel.hpp>
-#include <druid.hpp>
-#include <ork.hpp>
 
-const int FIELD_SIZE = 200;
-const int KILL_RADIUS = 30;
+#include "factory.hpp"
+#include "npc.hpp"
 
-void print_field(const std::vector<std::shared_ptr<NPC>>& npcs) {
-    std::cout << "\n=== Текущее состояние ===\n";
-    for (const auto& npc : npcs) {
-        if (npc->isAlive()) {
-            char symbol = ' ';
-            switch (npc->getType()) {
-                case SquirrelType: symbol = 'S'; break;
-                case DruidType:    symbol = 'D'; break;
-                case OrkType:      symbol = 'O'; break;
-                default:           symbol = '?'; break;
-            }
-            std::cout << symbol << " " << npc->getName() 
-                      << " (" << npc->getX() << "," << npc->getY() << ")\n";
+void save(const std::set<std::shared_ptr<NPC>>& array, const std::string& filename) {
+  std::ofstream fs(filename);
+  fs << array.size() << std::endl;
+  for (auto &n : array) {n->save(fs);}
+  fs.flush();
+  fs.close();
+}
+
+std::set<std::shared_ptr<NPC>> load(const std::string &filename) {
+  std::set<std::shared_ptr<NPC>> res;
+  std::ifstream is(filename);
+  if (is.good() && is.is_open()) {
+    int count;
+    is >> count;
+    for (int i = 0; i < count; ++i) {res.insert(factory(is));}
+    is.close();
+  } else {
+    std::cerr << "Error: " << std::strerror(errno) << std::endl;
+  }
+  return res;
+}
+
+std::ostream &operator<<(std::ostream &os, const std::set<std::shared_ptr<NPC>>& array) {
+  for (const auto& n : array) {n->print();}
+  return os;
+}
+
+std::set<std::shared_ptr<NPC>> fight(const std::set<std::shared_ptr<NPC>>& array, size_t distance) {
+  std::set<std::shared_ptr<NPC>> dead_list;
+  for (const auto& attacker : array) {
+    for (const auto& defender : array) {
+      if ((attacker != defender) && attacker->is_close(defender, distance) && !dead_list.count(defender)) {
+        if (defender->accept(attacker)) {
+          dead_list.insert(defender);
+          attacker->fight_notify(defender, true);
         }
+      }
     }
-    std::cout << "==========================\n\n";
+  }
+  return dead_list;
 }
 
 int main() {
-    std::vector<std::shared_ptr<NPC>> npcs;
-    npcs.push_back(std::make_shared<Squirrel>("Бельчонок", 10, 10));
-    npcs.push_back(std::make_shared<Squirrel>("Шустрик",   15, 20));
-    npcs.push_back(std::make_shared<Druid>("Мерлин",      50, 50));
-    npcs.push_back(std::make_shared<Druid>("Радагайс",    60, 45));
-    npcs.push_back(std::make_shared<Ork>("Громмаш",       100, 100));
-    npcs.push_back(std::make_shared<Ork>("Тралл",         110, 95));
-    npcs.push_back(std::make_shared<Squirrel>("Пушистик", 120, 80));
-    std::cout << "Игра началась! Всего NPC: " << npcs.size() << "\n\n";
-    int turn = 1;
-    const int MAX_TURNS = 20;
-    while (turn <= MAX_TURNS) {
-        std::cout << "=== Ход " << turn << " ===\n";
-        bool any_fight = false;
-        std::vector<std::shared_ptr<NPC>*> alive;
-        for (auto& npc : npcs) {
-            if (npc->isAlive()) {
-                alive.push_back(&npc);
-            }
-        }
-        for (size_t i = 0; i < alive.size(); ++i) {
-            for (size_t j = 0; j < alive.size(); ++j) {
-                if (i == j) continue;
-                auto& attacker = *alive[i];
-                auto& victim = *alive[j];
-                if (!attacker->isAlive() || !victim->isAlive()) continue;
-                double dist = attacker->distanceTo(victim);
-                if (dist <= KILL_RADIUS) {
-                    any_fight = true;
-                    std::cout << attacker->getName() << " ("  << (attacker->getType() == SquirrelType ? "S" : attacker->getType() == DruidType ? "D" : "O") << ") атакует " << victim->getName() << " на расстоянии " << static_cast<int>(dist) << "\n";
-                    attacker->fight(victim);
-                    if (!victim->isAlive()) {
-                        std::cout << "  >>> " << victim->getName() << " погибает!\n";
-                    }
-                    if (!attacker->isAlive()) {
-                        std::cout << "  >>> " << attacker->getName() << " погибает в бою!\n";
-                    }
-                }
-            }
-        }
-        print_field(npcs);
-        if (!any_fight) {
-            std::cout << "Больше никто не дерётся. Бои окончены.\n";
-            break;
-        }
-
-        turn++;
-    }
-    std::ofstream out("alive.txt");
-    if (out.is_open()) {
-        for (const auto& npc : npcs) {
-            if (npc->isAlive()) {
-                npc->save(out);
-            }
-        }
-        std::cout << "Выжившие сохранены в alive.txt\n";
-    }
-    std::cout << "\nИгра завершена.\n";
-    return 0;
+  std::srand(std::time(0));
+  std::set<std::shared_ptr<NPC>> array;
+  std::cout << "Generating ..." << std::endl;
+  for (size_t i = 0; i < 10; ++i) {
+    auto type = static_cast<NpcType>(std::rand() % 3 + 1);
+    array.insert(factory(type, "NPC_" + std::to_string(i), std::rand() % 100, std::rand() % 100));
+  }
+  std::cout << "Saving ..." << std::endl;
+  save(array, "npc.txt");
+  std::cout << "Loading ..." << std::endl;
+  array = load("npc.txt");
+  std::cout << "Initial state:" << std::endl << array;
+  std::cout << "Fighting ..." << std::endl;
+  for (size_t distance = 20; (distance <= 100) && !array.empty(); distance += 10) {
+    auto dead_list = fight(array, distance);
+    for (auto &d : dead_list) {array.erase(d);}
+    std::cout << "Fight stats ----------" << std::endl
+              << "distance: " << distance << std::endl
+              << "killed: " << dead_list.size() << std::endl
+              << "survivors: " << array.size() << std::endl
+              << std::endl;
+  }
+  std::cout << "Survivors:" << std::endl;
+  for (auto &n : array) {n->print();}
+  return 0;
 }
