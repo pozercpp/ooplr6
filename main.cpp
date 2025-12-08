@@ -3,7 +3,6 @@
 #include <fstream>
 #include <set>
 
-
 #include "factory.hpp"
 #include "npc.hpp"
 
@@ -34,12 +33,15 @@ std::ostream &operator<<(std::ostream &os, const std::set<std::shared_ptr<NPC>>&
   return os;
 }
 
+std::vector<std::pair<std::string, std::string>> p;
+
 std::set<std::shared_ptr<NPC>> fight(const std::set<std::shared_ptr<NPC>>& array, size_t distance) {
   std::set<std::shared_ptr<NPC>> dead_list;
   for (const auto& attacker : array) {
     for (const auto& defender : array) {
       if ((attacker != defender) && attacker->is_close(defender, distance) && !dead_list.count(defender)) {
         if (defender->accept(attacker)) {
+          p.emplace_back(defender->type, attacker->type);
           dead_list.insert(defender);
           attacker->fight_notify(defender, true);
         }

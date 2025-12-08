@@ -4,7 +4,7 @@
 #include "factory.hpp"
 
 
-Squirrel::Squirrel(const std::string &name_, int x_, int y_) : NPC(name_, x_, y_) {}
+Squirrel::Squirrel(const std::string &name_, int x_, int y_) : NPC(name_, x_, y_) {type = "squirrel";}
 
 Squirrel::Squirrel(std::istream &is) {
   is >> name;
@@ -15,9 +15,9 @@ bool Squirrel::accept(const std::shared_ptr<NPC>& attacker) {
   return attacker->visit_squirrel(std::static_pointer_cast<Squirrel>(shared_from_this()));
 }
 
-bool Squirrel::visit_squirrel(const std::shared_ptr<Squirrel>& defender) { return true; }
+bool Squirrel::visit_squirrel(const std::shared_ptr<Squirrel>& defender) {return false;}
 
-bool Squirrel::visit_ork(const std::shared_ptr<Ork>& defender) {return true;}
+bool Squirrel::visit_ork(const std::shared_ptr<Ork>& defender) {return false;}
 
 bool Squirrel::visit_druid(const std::shared_ptr<Druid>& defender) {return false;}
 
