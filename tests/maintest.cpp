@@ -22,8 +22,7 @@ TEST(NPCTest, KillNPC) {
 TEST(NPCTest, DistanceCalculation) {
     auto druid_npc = std::make_shared<Druid>("D", 0, 0);
     auto squirrel_npc = std::make_shared<Squirrel>("K", 3, 4);
-    std::shared_ptr<NPC> npc_squirrel = squirrel_npc;
-    double distance = druid_npc->dist(npc_squirrel);
+    double distance = druid_npc->dist(squirrel_npc);
     EXPECT_DOUBLE_EQ(distance, 5.0);
 }
 
@@ -34,12 +33,12 @@ TEST(NPCTest, SaveToStream) {
     std::string output = oss.str();
     EXPECT_FALSE(output.empty());
     EXPECT_NE(output.find("s"), std::string::npos);
+}
 
 TEST(NPCTest, TypeCheck) {
     auto druid = std::make_shared<Druid>("Druid1", 0, 0);
     auto squirrel = std::make_shared<Squirrel>("Squirrel1", 0, 0);
     auto ork = std::make_shared<Ork>("Ork1", 0, 0);
-    
     EXPECT_EQ(druid->Type(), "Druid");
     EXPECT_EQ(squirrel->Type(), "Squirrel");
     EXPECT_EQ(ork->Type(), "Ork");
