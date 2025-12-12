@@ -1,0 +1,37 @@
+#include <gtest/gtest.h>
+#include "druid.hpp"
+#include "squirrel.hpp"
+#include "ork.hpp"
+#include <cmath>
+#include <sstream>
+
+TEST(NPCTest, InitialState) {
+    auto druid = std::make_shared<Druid>("S", 0, 0);
+    EXPECT_TRUE(druid->isAlive());
+    EXPECT_EQ(druid->getName(), "S");
+    EXPECT_EQ(druid->Type(), "Druid");
+}
+
+TEST(NPCTest, KillNPC) {
+    auto squirrel = std::make_shared<Squirrel>("Arthur", 10, 10);
+    EXPECT_TRUE(squirrel->isAlive());
+    squirrel->kill();
+    EXPECT_FALSE(Squirrel->isAlive());
+}
+
+TEST(NPCTest, DistanceCalculation) {
+    auto Druid = std::make_shared<Druid>("D", 0, 0);
+    auto Squirrel = std::make_shared<Squirrel>("K", 3, 4);
+    std::shared_ptr<NPC> npc_Squirrel = Squirrel;
+    double distance = Druid->distanceTo(npc_Squirrel);
+    EXPECT_DOUBLE_EQ(distance, 5.0);
+}
+
+TEST(NPCTest, SaveToStream) {
+    auto druid = std::make_shared<Druid>("s", 100, 200);
+    std::ostringstream oss;
+    druid->save(oss);
+    std::string output = oss.str();
+    EXPECT_FALSE(output.empty());
+    EXPECT_NE(output.find("Smaug"), std::string::npos);
+}

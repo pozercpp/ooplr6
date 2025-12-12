@@ -1,18 +1,12 @@
 #pragma once
 
-#include<string>
-#include<memory>
+#include "npc.hpp"
+#include <iostream>
 
-#include<npc.hpp>
 
-struct Druid : public NPC {
-    Druid() = default;
-    Druid(const std::string &name_, int x_, int y_);
-    Druid(std::istream &is);
-    bool accept(const std::shared_ptr<NPC> &attacker);
-    bool visit_ork(const std::shared_ptr<Ork> &defender);
-    bool visit_squirrel(const std::shared_ptr<Squirrel> &defender);
-    bool visit_druid(const std::shared_ptr<Druid> &defender);
-    void print() const;
-    void save(std::ostream &os) const;
+class Druid : public NPC, public std::enable_shared_from_this<Druid> {
+public:
+    Druid(const std::string& name, int x, int y) : NPC(name, x, y) {type = DruidType;}
+    
+    std::string Type() const override { return "Druid"; }
 };

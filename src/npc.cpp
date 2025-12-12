@@ -1,34 +1,26 @@
 #include "npc.hpp"
 
 #include <cmath>
+#include <limits>
+#include <ostream>
 
-NPC::NPC(const std::string &name_, int x_, int y_)
-    : name(name_), x(x_), y(y_) {}
+#include "IFightVisitor.hpp"
 
-void NPC::subscribe(std::shared_ptr<IFightObserver> observer) {
-  observers.push_back(observer);
+NPC::NPC(const std::string& name, int x, int y) : name(name), x(x), y(y) {}
+
+double NPC::dist(const NpcPtr& other) const {
+    double dx = static_cast<double>(x - other->x);
+    double dy = static_cast<double>(y - other->y);
+    return std::sqrt(dx * dx + dy * dy);
 }
 
-void NPC::fight_notify(const std::shared_ptr<NPC>& defender, bool win) {
-  for (auto &o : observers)
-    if (o)
-      o->on_fight(shared_from_this(), defender, win);
+void NPC::fight(const std::shared_ptr<IFightVisitor>& visitor) {
+    if (visitor && alive) {
+        visitor->visit(std::shared_ptr<NPC>(this, [](NPC*){}));
+    }
 }
 
-bool NPC::is_close(const std::shared_ptr<NPC> &other, size_t distance) const {
-  if (std::pow(x - other->x, 2) + std::pow(y - other->y, 2) <=
-      std::pow(distance, 2))
-    return true;
-  else
-    return false;
-}
-
-void NPC::save(std::ostream &os) const {
-  os << name << std::endl;
-  os << x << " " << y << std::endl;
-}
-
-std::ostream &operator<<(std::ostream &os, const NPC &npc) {
-  os << "{ name: " << npc.name << ", x: " << npc.x << ", y: " << npc.y << " }";
-  return os;
+void NPC::save(std::ostream& os) const {
+    os << Type() << std::endl;
+    os << name << " " << x << " " << y << " " << "\n";
 }

@@ -1,18 +1,12 @@
 #pragma once
 
-#include<string>
-#include<memory>
+#include "npc.hpp"
+#include <iostream>
 
-#include<npc.hpp>
+class IFightVisitor;
 
-struct Squirrel : public NPC {
-    Squirrel() = default;
-    Squirrel(const std::string &name_, int x_, int y_);
-    Squirrel(std::istream &is);
-    bool accept(const std::shared_ptr<NPC>& attacker);
-    bool visit_ork(const std::shared_ptr<Ork>& defender);
-    bool visit_squirrel(const std::shared_ptr<Squirrel>& defender);
-    bool visit_druid(const std::shared_ptr<Druid>& defender);
-    void print() const;
-    void save(std::ostream &os) const;
+struct Squirrel : public NPC, public std::enable_shared_from_this<Squirrel> {
+    Squirrel(const std::string& name, int x, int y) : NPC(name, x, y) {type = SquirrelType;}
+
+    std::string Type() const override { return "Squirrel"; }
 };

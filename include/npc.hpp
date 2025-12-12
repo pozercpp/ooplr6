@@ -1,34 +1,38 @@
 #pragma once
 
-#include <iostream>
+#include<iostream>
 #include <memory>
-#include <vector>
+#include <string>
 
-struct Squirrel;
-struct Druid;
-struct Ork;
+class IFightVisitor;
 
-struct IFightObserver {
-  virtual void on_fight(const std::shared_ptr<struct NPC> &attacker, const std::shared_ptr<struct NPC> &defender, bool win) = 0;
-  virtual ~IFightObserver() = default;
+enum NpcType {SquirrelType, OrkType, DruidType};
+
+class NPC {
+protected:
+    std::string name;
+    int x, y;
+    bool alive = true;
+    NpcType type;
+public:
+    NPC(const std::string& name, int x, int y);
+    virtual ~NPC() = default;
+
+    void save (std::ostream& os) const;
+
+    std::string getName() const { return name; }
+    NpcType getType() const { return type; }
+    int getX() const { return x; }
+    int getY() const { return y; }
+
+    void fight(const std::shared_ptr<IFightVisitor>& visitor);
+    bool isAlive() const { return alive; }
+    void die() { alive = false; }
+
+    double dist(const std::shared_ptr<NPC>& other) const;
+
+    virtual std::string Type() const = 0;
+    void print() const {std::cout << Type() << " " << name << " at (" << x << ", " << y << ")" << (alive ? " Alive" : " Dead") << std::endl;}
 };
 
-struct NPC : public std::enable_shared_from_this<NPC> {
-  std::string name, type;
-  int x{0};
-  int y{0};
-  std::vector<std::shared_ptr<IFightObserver>> observers;
-  NPC() = default;
-  NPC(const std::string &name_, int x_, int y_);
-  ~NPC() noexcept = default;
-  void subscribe(std::shared_ptr<IFightObserver> observer);
-  void fight_notify(const std::shared_ptr<NPC>& defender, bool win);
-  bool is_close(const std::shared_ptr<NPC>& other, size_t distance) const;
-  virtual bool accept(const std::shared_ptr<NPC>& attacker) = 0;
-  virtual bool visit_squirrel(const std::shared_ptr<Squirrel>& defender) = 0;
-  virtual bool visit_druid(const std::shared_ptr<Druid>& defender) = 0;
-  virtual bool visit_ork(const std::shared_ptr<Ork>& defender) = 0;
-  virtual void print() const = 0;
-  virtual void save(std::ostream& os) const;
-  friend std::ostream &operator<<(std::ostream& os, const NPC& npc);
-};
+using NpcPtr = std::shared_ptr<NPC>;
